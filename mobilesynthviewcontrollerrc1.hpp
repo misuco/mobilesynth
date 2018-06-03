@@ -16,9 +16,6 @@ namespace mobilesynthview
   public:
     Widget();
     ~Widget();
-    void noteOn(int n, float f);
-    void noteOff(int n);
-    void pc(int n);
     void setController(synth::Controller * ctl);
   };
 }
