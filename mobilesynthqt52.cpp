@@ -33,16 +33,12 @@ mobileSynthQT52::mobileSynthQT52()
     ,   m_device(QAudioDeviceInfo::defaultOutputDevice())
 
 {
-    writeBehindReadPointer = false;
-    DataSampleRateHz  = 44100;
-    //DataSampleRateHz  = 48000;
-    //BufferSize        = 1024;
-    BufferSize        = 16384;
+    BufferSize        = 1024;
+    //BufferSize        = 16384;
 
     qDebug() << "mobileSynthQT52::size " << size();
     for(auto device:QAudioDeviceInfo::availableDevices(QAudio::AudioOutput)) {
         qDebug() << "****" << device.deviceName();
-        //if( device.deviceName() == "default") m_device=device;
     }
 
     syctl = new synth::Controller();
@@ -50,22 +46,7 @@ mobileSynthQT52::mobileSynthQT52()
     QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
     m_format=info.preferredFormat();
     qDebug() << "Preferred format is sr " << m_format.sampleRate() << " sn " << m_format.sampleSize() << " ch " << m_format.channelCount();
-
-    m_format.setSampleRate(DataSampleRateHz);
-    m_format.setChannelCount(1);
-    m_format.setSampleSize(16);
-    m_format.setCodec("audio/pcm");
-    m_format.setByteOrder(QAudioFormat::LittleEndian);
-    m_format.setSampleType(QAudioFormat::SignedInt);
-
-    if (!info.isFormatSupported(m_format)) {
-        qDebug() << "Default format not supported - trying to use nearest";
-        m_format = info.nearestFormat(m_format);
-        info.preferredFormat();
-        qDebug() << "nearest format is sr " << m_format.sampleRate() << " sn " << m_format.sampleSize() << " ch " << m_format.channelCount();
-    }
-
-    qDebug() << "used format is sr " << m_format.sampleRate() << " sn " << m_format.sampleSize() << " ch " << m_format.channelCount();
+    DataSampleRateHz  = m_format.sampleRate();
 
     syctl->set_sample_rate(m_format.sampleRate());
 
@@ -82,17 +63,8 @@ mobileSynthQT52::mobileSynthQT52()
     this->start();
     qDebug() << "buffer size is " << m_audioOutput->bufferSize();
 
-    sampleMemorySize = BufferSize * 2;
-    sampleMemory = new char[sampleMemorySize];
-    for(int i=0;i<sampleMemorySize;i++) sampleMemory[i]=0;
-    writePointer = 0;
-    readPointer = 0;
-    samplesPerInterrupt = DataSampleRateHz * 2 / 16;
-
     m_audioOutput->start(this);
 
-    connect(&sampleTimer,SIGNAL(timeout()),this,SLOT(sampleTimerEvent()));
-    sampleTimer.start(50);
 }
 
 mobileSynthQT52::~mobileSynthQT52()
@@ -118,24 +90,14 @@ qint64 mobileSynthQT52::readData(char *data, qint64 len)
     //qDebug() << "read data " << len << " readPointer " << readPointer << " writePointer " << writePointer;
 
     //TODO: why this dirty hack? why does windows request odd lens
+    /*
     if(len%2!=0) {
         qDebug() << "mobileSynthQT52::readData odd len " << len;
         len-=1;
     }
-
-    memcpy(data,sampleMemory+readPointer,len);
-
-    /*
-    for(int i=0;i<len;i++) {
-        *(data+i) = *(sampleMemory+readPointer+i);
-    }
     */
 
-    readPointer+=len;
-    if(readPointer>=sampleMemorySize) {
-        readPointer -= sampleMemorySize;
-        writeBehindReadPointer = false;
-    }
+    syctl->GetCharSamples(data, len);
     return len;
 }
 
@@ -155,35 +117,6 @@ void mobileSynthQT52::noteOn(int vid, float f)
 void mobileSynthQT52::noteOff(int vid)
 {
     syctl->NoteOff(vid);
-}
-
-void mobileSynthQT52::sampleTimerEvent()
-{
-    //qDebug() << "timerEvent " << writePointer;
-
-    if(writeBehindReadPointer && writePointer+samplesPerInterrupt > readPointer) {
-        //qDebug() << "avoiding write pointer to overrun read pointer";
-        return;
-    }
-
-    if(writePointer+samplesPerInterrupt >= sampleMemorySize) {
-        int readBytes = sampleMemorySize - writePointer;
-        syctl->GetCharSamples(sampleMemory+writePointer, readBytes);
-        writePointer = 0;
-        writeBehindReadPointer = true;
-        if(readPointer>0) {
-            readBytes = samplesPerInterrupt - readBytes;
-            syctl->GetCharSamples(sampleMemory+writePointer, readBytes);
-            writePointer += readBytes;
-        }
-    } else {
-        syctl->GetCharSamples(sampleMemory+writePointer, samplesPerInterrupt);
-        writePointer += samplesPerInterrupt;
-        if(writePointer>=sampleMemorySize) {
-            writePointer = 0;
-            writeBehindReadPointer = true;
-        }
-    }
 }
 
 #endif

@@ -51,9 +51,6 @@ public:
 
     synth::Controller * getSyctl() {return syctl;}
 
-private slots:
-    void sampleTimerEvent();
-
 private:
     int DataSampleRateHz;
     int BufferSize;
@@ -64,13 +61,6 @@ private:
     QAudioDeviceInfo m_device;
 
     QTimer sampleTimer;
-
-    char * sampleMemory;
-    int sampleMemorySize;
-    int writePointer;
-    int readPointer;
-    int samplesPerInterrupt;
-    bool writeBehindReadPointer;
 
 };
 

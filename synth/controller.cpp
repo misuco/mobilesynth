@@ -17,7 +17,7 @@ namespace synth {
     Controller::Controller()
     {
         channelBytes=0;
-        volume_=0.6;
+        volume_=0.4;
     }
 
     void Controller::set_volume(float volume)
