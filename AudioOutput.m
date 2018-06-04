@@ -3,10 +3,12 @@
 //  mobilesynth
 //
 //  Created by Allen Porter on 12/20/08.
+//  Modified by Claudio Zopfi 2009-2018
 //  Copyright 2008 thebends. All rights reserved.
 //
 
 #include <QtGlobal>
+
 #ifdef Q_OS_IOS
 
 #import "AudioOutput.h"
@@ -14,10 +16,8 @@
 #import <AudioUnit/AudioOutputUnit.h>
 #import <AudioToolbox/AudioServices.h>
 
-
 @implementation AudioOutput
 
-//static const float kSampleRate = 44100.0;
 static const int kOutputBus = 0;
 
 @synthesize sampleDelegate;
@@ -30,7 +30,7 @@ static const int kOutputBus = 0;
                                code:status
                            userInfo:nil] localizedDescription]);
   } else {
-    //NSLog(message);
+    NSLog(@"%@", message);
   }
   exit(1);
 }
@@ -41,9 +41,11 @@ static OSStatus playCallback(void *inRefCon,
                              UInt32 inBusNumber,
                              UInt32 inNumberFrames,
                              AudioBufferList *ioData) {
-  assert(inBusNumber == kOutputBus);
-  AudioOutput* output = (AudioOutput*)inRefCon;
-  return [[output sampleDelegate] generateSamples:ioData];
+    // NSLog(@"bus nr %u: %u" , inBusNumber, inNumberFrames);
+    // 0: 1024
+    assert(inBusNumber == kOutputBus);
+    AudioOutput* output = (AudioOutput*)inRefCon;
+    return [[output sampleDelegate] generateSamples:ioData];
 }
 
 - (id)init {
@@ -53,6 +55,7 @@ static OSStatus playCallback(void *inRefCon,
 
 - (id)initWithAudioFormat:(const AudioStreamBasicDescription*)streamDescription {
   if ((self = [super init])) {
+    NSLog(@"initWithAudioFormat %u" , streamDescription->mBitsPerChannel);
     memcpy(&audioFormat, streamDescription, sizeof(AudioStreamBasicDescription));
   }
   return self;
@@ -61,7 +64,7 @@ static OSStatus playCallback(void *inRefCon,
 - (void) start {
   OSStatus status;
   // Describe audio component
-  AudioComponentDescription desc;
+  AudioComponentDescription desc = { 0 };
   desc.componentType = kAudioUnitType_Output;
   desc.componentSubType = kAudioUnitSubType_RemoteIO;
   desc.componentFlags = 0;
