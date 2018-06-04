@@ -12,13 +12,6 @@
 #import "AudioOutput.h"
 #import <AudioToolbox/AudioConverter.h>
 
-namespace synth { class Controller; }
-namespace synth { class Envelope; }
-namespace synth { class LFO; }
-namespace synth { class Oscillator; }
-namespace synth { class Note; }
-namespace synth { class LowPass; }
-
 @interface mobilesynthViewControllerRc1 : UIViewController <SampleGenerator> {
  @private
   // Synthesizer components
@@ -28,9 +21,6 @@ namespace synth { class LowPass; }
   AudioStreamBasicDescription outputFormat;
 }
 
-- (void)noteOn:(int)note :(float)freq;
-- (void)noteOff:(int)note;
-- (void)pc:(int)prog;
 - (void)setController:(synth::Controller*)ctl;
 - (OSStatus)generateSamples:(AudioBufferList*)buffers;
 
