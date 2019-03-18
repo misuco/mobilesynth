@@ -39,7 +39,7 @@ mobileSynthQT52::mobileSynthQT52()
     qDebug() << "mobileSynthQT52::size " << size();
     for(auto device:QAudioDeviceInfo::availableDevices(QAudio::AudioOutput)) {
         qDebug() << "****" << device.deviceName();
-        //if( device.deviceName() == "default") m_device=device;
+        if( device.deviceName() == "default") m_device=device;
     }
 
     syctl = new synth::Controller();
@@ -88,7 +88,7 @@ void mobileSynthQT52::stop()
 
 qint64 mobileSynthQT52::readData(char *data, qint64 len)
 {
-    //qDebug() << "read data " << len << " readPointer " << readPointer << " writePointer " << writePointer;
+    //qDebug() << "read data " << len ;
 
     //TODO: why this dirty hack? why does windows request odd lens
     /*
